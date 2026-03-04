@@ -1,0 +1,319 @@
+import React from "react";
+import { View, Text, StyleSheet, TouchableOpacity, ScrollView, Alert } from "react-native";
+import { Swipeable } from "react-native-gesture-handler";
+import { Ionicons } from "@expo/vector-icons";
+
+/* Module Color Palette */
+const MODULE_COLORS = [
+  "#6D5EF5",
+  "#10B981",
+  "#F59E0B",
+  "#EF4444",
+  "#3B82F6",
+  "#EC4899",
+  "#14B8A6",
+  "#8B5CF6",
+];
+
+const getModuleColor = (moduleName = "") => {
+  const str = String(moduleName || "");
+  let hash = 0;
+  for (let i = 0; i < str.length; i++) {
+    hash = str.charCodeAt(i) + ((hash << 5) - hash);
+  }
+  return MODULE_COLORS[Math.abs(hash) % MODULE_COLORS.length];
+};
+
+const UpcomingTab = ({
+  COLORS,
+  navigation,
+  list = [],
+  isAdded,
+  isSavingThis,
+  addReminderToCalendar,
+  removeReminderTracking,
+}) => {
+  const toText = (v, fallback = "-") => {
+    if (v == null) return fallback;
+    if (typeof v === "string" || typeof v === "number") return String(v);
+    if (typeof v === "object") {
+      return String(v.code ?? v.name ?? v.title ?? fallback);
+    }
+    return fallback;
+  };
+
+  const safeKey = (s, idx) => {
+    const id = String(s?.id ?? s?._id ?? idx);
+    const start = String(s?.startISO ?? "");
+    return `${id}-${start}-${idx}`;
+  };
+
+  const renderRightActions = (cls) => (
+    <TouchableOpacity style={styles.swipeDelete} onPress={() => removeReminderTracking?.(cls)}>
+      <Ionicons name="trash-outline" size={18} color="#fff" />
+      <Text style={styles.swipeDeleteText}>Remove</Text>
+    </TouchableOpacity>
+  );
+
+  const formatDate = (dateVal) => {
+    const dateStr = toText(dateVal, "");
+    if (!dateStr) return "-";
+    if (dateStr.includes("-") && dateStr.length >= 10) {
+      const [y, m, d] = dateStr.slice(0, 10).split("-");
+      const dt = new Date(Number(y), Number(m) - 1, Number(d));
+      if (!isNaN(dt.getTime())) {
+        return dt.toLocaleDateString("en-GB", { weekday: "short", day: "numeric", month: "short", year: "numeric" });
+      }
+    }
+    const dt = new Date(dateStr);
+    if (!isNaN(dt.getTime())) {
+      return dt.toLocaleDateString("en-GB", { weekday: "short", day: "numeric", month: "short", year: "numeric" });
+    }
+    return "-";
+  };
+
+  const goReschedule = (cls) => {
+    const status = String(toText(cls?.status, "active")).toLowerCase();
+    const sessionName = String(toText(cls?.name, "")).toLowerCase();
+    
+    const isLocked = status === "rescheduled" || sessionName.includes("(rescheduled)");
+
+    if (isLocked) {
+      Alert.alert("Not allowed", "This class was already rescheduled and cannot be rescheduled again.");
+      return;
+    }
+
+    const startISO = toText(cls?.startISO, "");
+    if (startISO) {
+      const startMs = new Date(startISO).getTime();
+      if (!isNaN(startMs) && startMs <= Date.now()) {
+        Alert.alert("Not allowed", "You can only reschedule upcoming classes.");
+        return;
+      }
+    }
+    navigation.navigate("LecturerReschedule", { cls });
+  };
+
+  return (
+    <ScrollView contentContainerStyle={styles.content}>
+      {list.length === 0 ? (
+        <View style={styles.emptyBox}>
+          <Text style={styles.emptyTitle}>No upcoming sessions</Text>
+        </View>
+      ) : (
+        list.map((s, idx) => {
+          const moduleText = toText(s?.module, "MOD");
+          const titleText = toText(s?.title, "Session");
+          
+          const timeText = toText(s?.time, "-");
+          const venueText = toText(s?.venue, "-");
+          const dateText = formatDate(s?.date);
+
+          const status = String(toText(s?.status, "active")).toLowerCase();
+          const sessionName = toText(s?.name, "");
+
+          // Seperate Logic
+          const isReplacement = sessionName.toLowerCase().includes("(rescheduled)");
+          const isLocked = status === "rescheduled" || isReplacement;
+          
+          const statusLabel = status === "rescheduled" ? "Rescheduled" : "Upcoming";
+
+          const moduleColor = getModuleColor(moduleText);
+
+          const card = (
+            <TouchableOpacity
+              activeOpacity={0.9}
+              onPress={() => navigation.navigate("LecturerClassDetail", { cls: s })}
+              style={[styles.sessionCard, { borderColor: moduleColor + "55", backgroundColor: moduleColor + "10" }]}
+            >
+              <View style={{ flexDirection: "row" }}>
+                <View style={[styles.moduleBar, { backgroundColor: moduleColor }]} />
+
+                <View style={{ flex: 1 }}>
+                  <View style={styles.sessionTop}>
+                    <View style={{ flex: 1 }}>
+                      <Text style={[styles.module, { color: moduleColor }]}>{moduleText}</Text>
+                      <Text style={styles.sessionTitle}>{titleText}</Text>
+                    </View>
+
+                    <View style={[styles.statusPill, { backgroundColor: moduleColor + "22" }]}>
+                      <Text style={[styles.statusText, { color: moduleColor }]}>{statusLabel}</Text>
+                    </View>
+                  </View>
+
+                  <View style={styles.metaRow}>
+                    <Ionicons name="calendar-outline" size={16} color={COLORS.textMuted} />
+                    <Text style={styles.metaText}>{dateText}</Text>
+                  </View>
+
+                  <View style={styles.metaRow}>
+                    <Ionicons name="time-outline" size={16} color={COLORS.textMuted} />
+                    <Text style={styles.metaText}>{timeText}</Text>
+                  </View>
+
+                  <View style={styles.metaRow}>
+                    <Ionicons name="location-outline" size={16} color={COLORS.textMuted} />
+                    <Text style={styles.metaText}>{venueText}</Text>
+                  </View>
+
+                  <View style={styles.actionsRow}>
+                    <TouchableOpacity
+                      style={[styles.primaryBtnCompact, { backgroundColor: COLORS.primary }]}
+                      onPress={() => navigation.navigate("LecturerClassDetail", { cls: s })}
+                    >
+                      <Ionicons name="information-circle-outline" size={16} color="#fff" />
+                      <Text style={styles.primaryBtnText}>Details</Text>
+                    </TouchableOpacity>
+
+                    <TouchableOpacity
+                      style={[
+                        styles.secondaryBtnSmall,
+                        isAdded?.(s) && styles.secondaryBtnDisabled,
+                        { backgroundColor: moduleColor + "22" },
+                      ]}
+                      disabled={!!isAdded?.(s) || !!isSavingThis?.(s)}
+                      onPress={() => addReminderToCalendar?.(s)}
+                    >
+                      <Ionicons
+                        name={isAdded?.(s) ? "checkmark-circle-outline" : "bookmark-outline"}
+                        size={16}
+                        color={moduleColor}
+                      />
+                      <Text style={[styles.secondaryBtnTextSmall, { color: moduleColor }]}>
+                        {isSavingThis?.(s) ? "..." : isAdded?.(s) ? "Added" : "Reminder"}
+                      </Text>
+                    </TouchableOpacity>
+
+                    <TouchableOpacity
+                      style={[
+                        styles.secondaryBtnSmall,
+                        { backgroundColor: moduleColor + "22" },
+                        isLocked && { opacity: 0.55 },
+                      ]}
+                      onPress={() => goReschedule(s)}
+                      disabled={isLocked}
+                    >
+                      <Ionicons name={isLocked ? "lock-closed" : "calendar-outline"} size={16} color={moduleColor} />
+                      <Text style={[styles.secondaryBtnTextSmall, { color: moduleColor }]}>
+                        {isLocked ? "Locked" : "Move"}
+                      </Text>
+                    </TouchableOpacity>
+                  </View>
+
+                  {isLocked && (
+                    <Text style={styles.lockHint}>
+                      {isReplacement 
+                        ? "This is a replacement class. Rescheduling again is disabled." 
+                        : "This class has been rescheduled once. Rescheduling again is disabled."}
+                    </Text>
+                  )}
+
+                  {isAdded?.(s) && (
+                    <View style={styles.swipeHintRow}>
+                      <Ionicons name="arrow-back-outline" size={14} color={COLORS.textMuted} />
+                      <Text style={styles.swipeHintText}>Swipe left to remove</Text>
+                    </View>
+                  )}
+
+                  <View style={styles.tapHintRow}>
+                    <Ionicons name="hand-left-outline" size={14} color={COLORS.textMuted} />
+                    <Text style={styles.tapHintText}>Tap card for details</Text>
+                    <Ionicons name="chevron-forward" size={16} color={moduleColor} />
+                  </View>
+                </View>
+              </View>
+            </TouchableOpacity>
+          );
+
+          return (
+            <Swipeable
+              key={safeKey(s, idx)}
+              enabled={!!isAdded?.(s)}
+              renderRightActions={() => renderRightActions(s)}
+              overshootRight={false}
+            >
+              {card}
+            </Swipeable>
+          );
+        })
+      )}
+
+      <View style={{ height: 24 }} />
+    </ScrollView>
+  );
+};
+
+const styles = StyleSheet.create({
+  content: { paddingHorizontal: 20, paddingTop: 6 },
+  sessionCard: {
+    borderRadius: 18,
+    padding: 16,
+    borderWidth: 1,
+    marginBottom: 12,
+    backgroundColor: "#fff",
+  },
+  moduleBar: { width: 6, borderRadius: 6, marginRight: 12 },
+  sessionTop: { flexDirection: "row", justifyContent: "space-between", alignItems: "center" },
+  module: { fontWeight: "900" },
+  sessionTitle: { marginTop: 2, fontSize: 16, fontWeight: "900", color: "#111827" },
+  statusPill: { paddingHorizontal: 10, paddingVertical: 4, borderRadius: 999, borderWidth: 1, borderColor: "#E5E7EB" },
+  statusText: { fontWeight: "900", fontSize: 12 },
+  metaRow: { flexDirection: "row", alignItems: "center", gap: 8, marginTop: 8 },
+  metaText: { color: "#6B7280", fontWeight: "600" },
+  actionsRow: { flexDirection: "row", gap: 10, marginTop: 14 },
+  primaryBtnCompact: {
+    flex: 1,
+    paddingVertical: 12,
+    borderRadius: 14,
+    flexDirection: "row",
+    justifyContent: "center",
+    alignItems: "center",
+    gap: 8,
+  },
+  primaryBtnText: { color: "#fff", fontWeight: "900" },
+  secondaryBtnDisabled: { opacity: 0.65 },
+  lockHint: {
+    marginTop: 10,
+    color: "#6B7280",
+    fontWeight: "700",
+    fontSize: 12,
+    lineHeight: 16,
+  },
+  swipeHintRow: { marginTop: 10, flexDirection: "row", alignItems: "center", gap: 6 },
+  swipeHintText: { color: "#6B7280", fontWeight: "700", fontSize: 12 },
+  swipeDelete: {
+    width: 110,
+    marginBottom: 12,
+    borderRadius: 18,
+    backgroundColor: "#DC2626",
+    alignItems: "center",
+    justifyContent: "center",
+    flexDirection: "row",
+    gap: 6,
+  },
+  swipeDeleteText: { color: "#fff", fontWeight: "900" },
+  secondaryBtnSmall: {
+    flex: 1,
+    paddingVertical: 12,
+    borderRadius: 14,
+    flexDirection: "row",
+    justifyContent: "center",
+    alignItems: "center",
+    gap: 6,
+  },
+  secondaryBtnTextSmall: { fontWeight: "900", fontSize: 12 },
+  emptyBox: { marginTop: 30, alignItems: "center" },
+  emptyTitle: { color: "#6B7280", fontWeight: "700" },
+  tapHintRow: {
+    marginTop: 12,
+    paddingTop: 12,
+    borderTopWidth: 1,
+    borderTopColor: "#E5E7EB",
+    flexDirection: "row",
+    alignItems: "center",
+    justifyContent: "space-between",
+  },
+  tapHintText: { flex: 1, marginLeft: 8, color: "#6B7280", fontWeight: "700" },
+});
+
+export default UpcomingTab;
