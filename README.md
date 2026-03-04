@@ -243,10 +243,12 @@ npm install --registry=https://registry.npmmirror.com
 npm run dev
 ```
 
+### Documentations
+https://drive.google.com/drive/folders/197gxfKtsvSv8vBMceO46nJFM20nGvVAj
+
 ---
 
 **Attendify Project**
 Final Year Project – Automatic Attendance System with Facial Recognition
 
-### Documentations
-https://drive.google.com/drive/folders/197gxfKtsvSv8vBMceO46nJFM20nGvVAj
+
