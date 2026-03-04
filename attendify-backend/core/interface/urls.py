@@ -1,0 +1,98 @@
+from django.urls import path
+from .views import auth_views
+from .views import users_views
+from .views import communication_views
+from .views import academics_views
+from .views import requests_views
+from .views import admin_views
+
+
+urlpatterns = [
+    # Auth
+    path('login/', auth_views.login_view, name='login'),
+    path('logout/', auth_views.logout_view, name='logout'),
+    path('change-password/', auth_views.change_password, name='change-password'),
+    path('request-otp/', auth_views.request_otp, name='request-otp'),
+    path('verify-otp/', auth_views.verify_otp, name='verify-otp'),
+    path('reset-password/', auth_views.reset_password, name='reset-password'),
+    path('keep-redis-alive/', auth_views.keep_redis_alive, name='keep-redis-alive'),
+    path('save-push-token/', auth_views.save_push_token, name='save-push-token'),
+    path('remove-push-token/', auth_views.remove_push_token, name='remove-push-token'),
+
+    # Users
+    path('profile/', users_views.get_profile, name='profile'),
+    path('edit-profile/', users_views.edit_profile, name='edit-profile'),
+
+    # Academics
+    path('dashboard/', academics_views.get_dashboard, name='dashboard-stats'),
+    path('timetable/', academics_views.get_timetable, name='timetable'),
+    path('class-details/<int:session_id>/', academics_views.get_class_details, name='class-details'),
+    path('attendance-history/', academics_views.get_attendance_history, name='attendance-history'),
+    path('get-reschedule-options/', academics_views.get_reschedule_options, name='get-reschedule-options'),
+    path('reschedule-class/', academics_views.reschedule_class, name='reschedule-class'),
+    path('mark-attendance/', academics_views.mark_attendance, name='mark-attendance'),
+    path('register-face/', academics_views.register_face, name='register-face'),
+
+    # Communication
+    path('newsevent/', communication_views.get_newsevent, name='newsevent'),
+    path('check-event-status/', communication_views.check_event_status, name='check-event-status'),
+    path('join-event/', communication_views.join_event, name='join-event'),
+    path('quit-event/', communication_views.quit_event, name='quit-event'),
+    path('notifications/', communication_views.get_notifications, name='notifications'),
+    path('notifications/mark-read/', communication_views.mark_notifications_read, name='mark-read'),
+    path('notifications/<int:pk>/mark-read/', communication_views.mark_single_notifications_read, name='mark-one-read'),
+
+    # Requests
+    path('leaves/', requests_views.get_leaves, name='leaves'),
+    path('appeals/', requests_views.get_student_appeals, name='appeals'),
+    path('apply-leaves/', requests_views.apply_leaves, name='apply-leaves'),
+    path('apply-appeals/', requests_views.apply_appeals, name='apply-appeals'),
+    path('get-appeals-document/<int:appeal_id>/', requests_views.get_appeal_document_url, name='get-appeal-document-url'),
+    path('get-leave-document/<int:leave_id>/', requests_views.get_leave_document_url, name='get-leave-document-url'),
+
+
+    # Admin
+    # Custom
+    path('admin/semester-attendance/<str:student_id>/', admin_views.get_student_semester_attendance, name='student-semester-attendance'),
+    path('admin/get-document-url/', admin_views.get_secure_document_url, name='get_secure_document_url'),
+    # Users
+    path('admin/crud/users/', admin_views.users_list, name='crud-users-list'),
+    path('admin/crud/users/<int:pk>/', admin_views.users_detail, name='crud-users-detail'),
+    # Manage specific profiles
+    path('admin/crud/students/', admin_views.students_list, name='crud-students-list'),
+    path('admin/crud/students/<int:pk>/', admin_views.students_detail, name='crud-students-detail'), 
+    path('admin/crud/lecturers/', admin_views.lecturers_list, name='crud-lecturers-list'),
+    path('admin/crud/lecturers/<int:pk>/', admin_views.lecturers_detail, name='crud-lecturers-detail'),
+    path('admin/crud/admins/', admin_views.admins_list, name='crud-admins-list'),
+    path('admin/crud/admins/<int:pk>/', admin_views.admins_detail, name='crud-admins-detail'),
+
+    # Academics
+    path('admin/crud/uni/', admin_views.uni_list, name='crud-uni-list'),
+    path('admin/crud/uni/<int:pk>/', admin_views.uni_detail, name='crud-uni-detail'),
+    path('admin/crud/semesters/', admin_views.semesters_list, name='crud-semesters-list'),
+    path('admin/crud/semesters/<int:pk>/', admin_views.semesters_detail, name='crud-semesters-detail'),
+    path('admin/crud/modules/', admin_views.modules_list, name='crud-modules-list'),
+    path('admin/crud/modules/<int:pk>/', admin_views.modules_detail, name='crud-modules-detail'),
+    path('admin/crud/sessions/', admin_views.sessions_list, name='crud-sessions-list'),
+    path('admin/crud/sessions/<int:pk>/', admin_views.sessions_detail, name='crud-sessions-detail'),
+    path('admin/crud/classrooms/', admin_views.classrooms_list, name='crud-classrooms-list'),
+    path('admin/crud/classrooms/<int:pk>/', admin_views.classrooms_detail, name='crud-classrooms-detail'),
+    path('admin/crud/attendance/', admin_views.records_list, name='crud-records-list'),
+    path('admin/crud/attendance/<int:pk>/', admin_views.records_detail, name='crud-records-detail'),
+
+    # Communication
+    path('admin/crud/notifications/', admin_views.notifs_list, name='crud-notifs-list'),
+    path('admin/crud/notifications/<int:pk>/', admin_views.notifs_detail, name='crud-notifs-detail'),
+    path('admin/crud/news/', admin_views.news_list, name='crud-news-list'),
+    path('admin/crud/news/<int:pk>/', admin_views.news_detail, name='crud-news-detail'),
+    path('admin/crud/events/', admin_views.events_list, name='crud-events-list'),
+    path('admin/crud/events/<int:pk>/', admin_views.events_detail, name='crud-events-detail'),
+    path('admin/crud/announcements/', admin_views.announcement_list, name='crud-announcements-list'),
+    path('admin/crud/announcements/<int:pk>/', admin_views.announcement_detail, name='crud-announcements-detail'),
+
+    # Requests
+    path('admin/crud/leaves/', admin_views.leaves_list, name='crud-leaves-list'),
+    path('admin/crud/leaves/<int:pk>/', admin_views.leaves_detail, name='crud-leaves-detail'),
+    path('admin/crud/appeals/', admin_views.appeals_list, name='crud-appeals-list'),
+    path('admin/crud/appeals/<int:pk>/', admin_views.appeals_detail, name='crud-appeals-detail'),
+]  
